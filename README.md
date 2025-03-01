@@ -1,2 +1,8 @@
-# document-analysis-using-LLM
-Analisis Dokumen Laporan Surveillance Perbankan Indonesia Tahun 2024 menggunakan Large Language Models
+# Analisis Dokumen Laporan Surveillance Perbankan Indonesia Tahun 2024 menggunakan Large Language Models
+Analisis dokumen dilakukan dengan pendekatan Retrieval-Augmented Generation (RAG) untuk menggali informasi penting dari Laporan Surveillance Perbankan Indonesia Triwulan III Tahun 2024. Proses ini memanfaatkan model sentence-transformers ('all-MiniLM-L6-v2') untuk menghasilkan representasi vektor dari teks, yang memungkinkan pencarian cepat dan efektif di dalam dokumen besar. qdrant-client digunakan untuk melakukan pencarian berbasis vektor, memastikan bahwa hanya bagian-bagian yang relevan dari laporan yang dapat diambil dan dianalisis.
+
+Pendekatan ini menggabungkan kemampuan pencarian dengan generasi teks, memungkinkan analisis lebih dalam terhadap konten laporan, serta menyarankan kesimpulan atau ringkasan yang relevan untuk pengguna.
+
+Selain itu, untuk mempermudah interaksi pengguna dengan isi laporan, dilengkapi juga dengan chatbot berbasis model Groq. Sebagai bagian dari sistem interaktif, chatbot yang dikembangkan menggunakan model Llama-3.2-90b-vision-preview berfungsi untuk memberikan wawasan berbasis pertanyaan dan jawaban terkait dengan isi laporan. Chatbot ini memungkinkan pengguna untuk mengajukan pertanyaan terkait dengan Laporan Surveillance Perbankan Indonesia Triwulan III 2024 dan mendapatkan jawaban yang akurat dan relevan dengan cepat.
+
+Melalui kombinasi antara analisis dokumen menggunakan RAG dan pencarian berbasis model vektor dengan sentence-transformers, serta chatbot berbasis Llama-3.2-90b-vision-preview, Sistem ini menawarkan solusi canggih untuk memudahkan pemahaman dan interaksi dengan data dalam Laporan Surveillance Perbankan Indonesia Tahun 2024. Sistem ini dapat dengan cepat menemukan bagian-bagian yang relevan dalam dokumen dan menghasilkan ringkasan atau analisis berdasarkan informasi tersebut, mempercepat pemahaman terhadap kondisi sektor perbankan Indonesia yang dijabarkan dalam laporan.
