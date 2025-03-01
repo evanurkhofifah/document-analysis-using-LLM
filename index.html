@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="img/artificial-intelligence.png">
+    <link rel="stylesheet" href="fonts/flaticon/font/flaticon.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <!-- Menyertakan stylesheet CodeMirror -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/codemirror.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/theme/eclipse.css">
+    <link href="css/style.css" rel="stylesheet" />
+    <title>Document Analysis</title>
+</head>
+
+<body>
+    <div class="container">
+        <div id="content" class="content">
+            <h1>Analisis Dokumen Laporan Surveillance Perbankan Indonesia <br> Menggunakan Large Language Models</h1>
+            <p>Analisis dokumen dilakukan dengan pendekatan <em>Retrieval-Augmented Generation (RAG)</em>
+                untuk menggali informasi penting dari <strong>Laporan Surveillance Perbankan Indonesia Triwulan III Tahun 2024</strong>.
+                Proses ini memanfaatkan model <code>sentence-transformers ('all-MiniLM-L6-v2')</code> untuk menghasilkan representasi vektor dari teks, 
+                yang memungkinkan pencarian cepat dan efektif di dalam dokumen besar. 
+                <code>qdrant-client</code> digunakan untuk melakukan pencarian berbasis vektor, 
+                memastikan bahwa hanya bagian-bagian yang relevan dari laporan yang dapat diambil dan dianalisis. 
+            </p>
+            <p>Pendekatan ini menggabungkan kemampuan pencarian dengan generasi teks, 
+                memungkinkan analisis lebih dalam terhadap konten laporan, 
+                serta menyarankan kesimpulan atau ringkasan yang relevan untuk pengguna. 
+            </p>
+            <p>Selain itu, untuk mempermudah interaksi pengguna dengan isi laporan, 
+                dilengkapi juga dengan chatbot berbasis model Groq.
+                Sebagai bagian dari sistem interaktif, chatbot yang dikembangkan menggunakan model <code>Llama-3.2-90b-vision-preview</code> 
+                berfungsi untuk memberikan wawasan berbasis pertanyaan dan jawaban terkait dengan isi laporan. 
+                Chatbot ini memungkinkan pengguna untuk mengajukan pertanyaan 
+                terkait dengan Laporan Surveillance Perbankan Indonesia Triwulan III 2024 
+                dan mendapatkan jawaban yang akurat dan relevan dengan cepat. 
+            </p>
+            <p>Melalui kombinasi antara analisis dokumen menggunakan RAG dan pencarian berbasis model vektor dengan <code>sentence-transformers</code>, 
+                serta chatbot berbasis <code>Llama-3.2-90b-vision-preview</code>, 
+                Sistem ini menawarkan solusi canggih untuk memudahkan pemahaman dan interaksi 
+                dengan data dalam Laporan Surveillance Perbankan Indonesia Tahun 2024.
+                Sistem ini dapat dengan cepat menemukan bagian-bagian yang relevan 
+                dalam dokumen dan menghasilkan ringkasan atau analisis berdasarkan informasi tersebut, 
+                mempercepat pemahaman terhadap kondisi sektor perbankan Indonesia yang dijabarkan dalam laporan.
+            </p>
+
+            <div class="paragraph">
+                <h2>Analisis Dokumen menggunakan LLM</h2>
+                <p class="justify-text">
+                    Langkah pertama dalam analisis dokumen adalah mengekstrak konten dari file PDF 
+                    Laporan Surveillance Perbankan Indonesia Triwulan III Tahun 2024. 
+                    Untuk mengekstraknya menggunakan library <code>PyMuPDF</code> 
+                    untuk membuka, membaca, dan mengekstrak teks dari setiap halaman PDF. 
+                    Library <code>sentence-transformers</code> untuk menghasilkan embedding vektor dari teks atau kalimat. 
+                    Library <code>qdrant-client</code> untuk menyimpan dan mengelola vektor-vektor tersebut di dalam Qdrant, 
+                    serta melakukan pencarian berbasis kemiripan.
+                    Untuk menginstal library di lingkungan Python dapat menggunakan contoh perintah: <code>pip install PyMuPDF</code>.
+                </p>
+                <p class="justify-text">
+                    Berikut ini cara mengekstrak kalimat-kalimat dari file PDF, 
+                    kemudian menghasilkan embedding vektor untuk setiap kalimat menggunakan model dari sentence-transformers.
+                </p>
+                <h3>1. Import Libraries</h3>
+                <p class="justify-text">
+                    Pertama mengimpor library yang diperlukan: <code>qdrant_client</code> untuk berinteraksi dengan Qdrant, 
+                    <code>sentence_transformers</code> untuk menghasilkan embedding vektor dari kalimat, dan <code>fitz</code> dari PyMuPDF untuk membaca file PDF. 
+                    Library ini memungkinkan kita untuk mengolah dan menyimpan vektor dari teks PDF.
+                </p>
+               <textarea id="code" name="code">
+from qdrant_client import QdrantClient
+from qdrant_client.models import PointStruct, Distance, VectorParams, FieldCondition, MatchValue
+from sentence_transformers import SentenceTransformer
+import fitz
+                </textarea>
+
+                <!-- Inisialisasi Model Sentence-Transformers dan Fungsi untuk Mengekstrak Kalimat dari PDF -->
+                 <h3>
+                    2. Inisialisasi Model dan Fungsi untuk Mengekstrak Kalimat dari PDF
+                </h3>
+                <p class="justify-text">
+                    Menginisialisasi model <code>SentenceTransformer</code> dengan pre-trained model <code>all-MiniLM-L6-v2</code>.
+                    Model ini digunakan untuk mengubah teks (seperti kalimat) menjadi embedding vektor
+                    yang dapat mewakili makna semantik dari kalimat tersebut.
+                </p>
+                <p class="justify-text">
+                    Setelah menginisialisasi model <code>SentenceTransformer</code>, selanjutnya membuat fungsi
+                    untuk membuka file PDF, mengekstrak teks dari setiap halaman, 
+                    dan membaginya menjadi kalimat-kalimat berdasarkan tanda titik. 
+                    Kalimat-kalimat yang tidak kosong kemudian disimpan dalam daftar <code>sentences</code>. 
+                    Ini berfungsi untuk mengekstrak data teks dari PDF yang bisa diproses lebih lanjut.
+                </p>
+                <textarea id="code" name="code">
+# Inisialisasi embedding model (Sentence Transformers)
+embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+
+# Fungsi untuk mengambil kalimat dari PDF
+def extract_sentences_from_pdf(pdf_path):
+    doc = fitz.open(pdf_path)  # Membuka file PDF
+    sentences = []
+
+    # Menyusuri setiap halaman dalam PDF
+    for page_num in range(len(doc)):
+        page = doc.load_page(page_num)  # Memuat halaman ke-`page_num`
+        text = page.get_text("text")  # Ekstrak teks dalam bentuk string
+        page_sentences = text.split('.')  # Pisahkan teks menjadi kalimat-kalimat berdasarkan tanda titik
+
+        # Membersihkan dan menambahkan kalimat yang valid
+        for sentence in page_sentences:
+            clean_sentence = sentence.strip() # Setiap kalimat yang dihasilkan dibersihkan dari spasi ekstra
+            if clean_sentence:
+                sentences.append(clean_sentence)
+
+    return sentences
+                </textarea>
+
+                <!-- Ekstrak PDF dan Generate Embeddings-->
+                 <h3>
+                    3. Ekstrak PDF dan Generate Embeddings
+                </h3>
+                <p class="justify-text">
+                    Tentukan path ke file PDF yang ingin kita ekstrak kalimat-kalimatnya. 
+                    Path ini akan digunakan oleh fungsi untuk membaca file PDF Laporan Surveillance Perbankan Indonesia Triwulan III 2024.
+                    Kemudian panggil fungsi yang sudah dibuat untuk mengambil kalimat-kalimat 
+                    yang diekstrak dari PDF tersebut dan menyimpannya dalam variabel <code>sentences</code>.
+                    Setiap kalimat dalam daftar <code>sentences</code> diubah menjadi vektor embedding 
+                    menggunakan model <code>SentenceTransformer</code>.
+                </p>
+                <textarea id="code" name="code">
+# Path ke file PDF
+pdf_path = "/content/LSPI_T3_2024.pdf"
+
+# Ekstrak kalimat-kalimat dari PDF
+sentences = extract_sentences_from_pdf(pdf_path)
+
+# Generate embeddings untuk kalimat-kalimat yang diambil
+embeddings = embedding_model.encode(sentences)
+                </textarea>
+
+                <!-- Menghubungkan ke Qdrant-->
+                 <h3>
+                    4. Menghubungkan ke Qdrant dan Membuat Koleksi
+                </h3>
+                <p class="justify-text">
+                    Menghubungkan ke Qdrant, membuat koleksi baru untuk menyimpan embedding kalimat, 
+                    dan memasukkan data embedding (beserta kalimat asli) ke dalam koleksi tersebut. 
+                    Vektor-vektor embedding ini bisa digunakan untuk pencarian atau analisis lebih lanjut.
+                </p>
+                <textarea id="code" name="code">
+# Connect ke Qdrant
+client = QdrantClient(":memory:")
+collection_name = "lspi_embeddings"
+
+# Buat sebuah koleksi di Qdrant
+client.recreate_collection(
+    collection_name=collection_name,
+    vectors_config=VectorParams(size=len(embeddings[0]), distance=Distance.COSINE),
+)
+
+# Insert embeddings ke dalam Qdrant
+points = [
+    PointStruct(
+        id=i,
+        vector=embeddings[i],
+        payload={"sentence": sentences[i]}
+    )
+    for i in range(len(sentences))
+]
+
+# Menambahkan embedding ke koleksi Qdrant
+client.upsert(collection_name=collection_name, points=points)
+                </textarea>
+                <p class="justify-text">
+                    <ul>
+                        <li>
+                            Buat objek <code>QdrantClient</code> dan menghubungkannya ke Qdrant dengan menggunakan parameter <code>:memory:</code>
+                        </li>
+                        <li>
+                            Kemudian, buat variabel <code>collection_name</code> diinisialisasi dengan nama koleksi yang ingin dibuat di Qdrant, yaitu <code>"lspi_embeddings"</code>. 
+                            Koleksi ini akan menyimpan vektor-vektor embedding yang dihasilkan dari kalimat-kalimat PDF sebelumnya.
+                        </li>
+                        <li>
+                            Buat koleksi di Qdrant dengan fungsi <code>recreate_collection</code>
+                            yang digunakan untuk membuat koleksi baru di Qdrant atau menghapus dan membuat ulang koleksi jika sudah ada.
+                        </li>
+                        <li>
+                            Kemudian menyusun data untuk dimasukkan ke Qdrant 
+                            dengan membuat daftar <code>points</code> yang berisi <code>PointStruct</code> 
+                            untuk setiap kalimat dalam <code>sentences</code> dan embedding yang terkait.
+                        </li>
+                        <li>
+                            Terakhir, menambahkan embedding ke koleksi Qdrant dengan fungsi <code>upsert </code>
+                            yang digunakan untuk menambahkan (atau memperbarui) titik (point) ke dalam koleksi di Qdrant.
+                        </li>
+                    </ul>
+                </p>
+
+                <!-- Buat fungsi untuk mencari informasi relevan dalam koleksi vektor yang ada di Qdrant-->
+                 <h3>
+                    5. Buat fungsi untuk mencari informasi relevan yang ada di Qdrant
+                </h3>
+                <p class="justify-text">
+                    Fungsi ini mengambil query dari pengguna, mengubahnya menjadi embedding vektor, 
+                    lalu mencari kalimat yang paling mirip dengan query dalam koleksi Qdrant menggunakan pencarian berbasis vektor.
+                </p>
+                <textarea id="code" name="code">
+def query_info(query, collection_name):
+    # Generate embedding untuk query pengguna
+    query_embedding = embedding_model.encode(query)
+
+    # Mencari kalimat yang paling relevan di Qdrant berdasarkan vektor query
+    search_result = client.search(
+        collection_name=collection_name,
+        query_vector=query_embedding.tolist(),
+        limit=1,  # Mengambil satu hasil paling relevan
+    )
+
+    # Mengambil kalimat dari hasil pencarian dan skor kemiripan
+    most_similar_sentence = search_result[0].payload['sentence']
+    similarity_score = search_result[0].score
+
+    return most_similar_sentence, similarity_score
+                </textarea>
+                <p class="justify-text">
+                    <ul>
+                        <li>
+                            Fungsi <code>query_info</code> didefinisikan dengan dua parameter yaitu <code>query</code> 
+                            untuk teks query yang dimasukkan oleh pengguna untuk mencari informasi yang relevan dalam koleksi.
+                            <code>collection_name</code> koleksi di Qdrant yang akan digunakan untuk pencarian.
+                        </li>
+                        <li>
+                            <code>query</code> (kalimat atau pertanyaan yang dimasukkan oleh pengguna) diubah menjadi embedding vektor 
+                            menggunakan model <code>embedding_model</code> yang sudah dilatih sebelumnya (model SentenceTransformer).
+                        </li>
+                        <li>
+                            Fungsi <code>client.search</code> digunakan untuk mencari vektor yang paling mirip dengan <code>query_embedding</code> dalam koleksi Qdrant.
+                            Setelah pencarian, hasil pencarian disimpan dalam <code>search_result</code>.
+                        </li>
+                    </ul>
+                    Fungsi ini memungkinkan pencarian berbasis semantik, 
+                    yang mana hasil pencarian tidak hanya bergantung pada pencocokan kata kunci literal, 
+                    tetapi juga pada makna semantik dari query yang dimasukkan.
+                </p>
+
+                <!-- Query dari Pengguna-->
+                 <h3>
+                    6. Query dari Pengguna
+                </h3>
+                <p class="justify-text">
+                    Berikut ini contoh query atau teks yang dimasukkan oleh pengguna sebagai pertanyaan.
+                    Pertanyaan ini akan digunakan untuk mencari informasi terkait dalam koleksi yang ada di Qdrant.
+                </p><textarea id="code" name="code">
+# Pertanyaan dari pengguna (query)
+user_query = "Bagaimana pertumbuhan ekonomi Indonesia pada triwulan III-2024 dari sisi domestik?"
+
+# Menjalankan pencarian berdasarkan query
+answer, score = query_info(user_query, collection_name)
+
+# Menampilkan hasil
+print(f"Jawaban untuk query '{user_query}':")
+print(f"Kalimat terkait: {answer}")
+print(f"Skor kemiripan: {score:.4f}")
+                </textarea>
+            </div>
+            <div style="background-color: #E3DEC6; padding: 4px; text-align: center;">
+                <h4> Output Query</h4>
+                <img src="img/output.png"  alt="Output_Query">
+                <br><br>
+                <h4> Laporan Surveillance Perbankan Indonesia Triwulan III Tahun 2024</h4>
+                <img src="img/pdf_text.png"  alt="Konten_LSPI">
+            </div>
+            <div class="paragraph">
+                <!-- Interpretasi Hasil -->
+                <p class="justify-text">
+                    <ul>
+                        <li>
+                            Pertumbuhan Ekonomi Indonesia pada Triwulan III-2024 dari sisi domestik tercatat tumbuh moderat sebesar 4,95% (yoy), 
+                            yang berarti ada peningkatan kecil sekitar 0,01% dibandingkan dengan 4,94% (yoy) pada triwulan III tahun sebelumnya.
+                        </li>
+                        <li>
+                            Skor kemiripan yang tinggi (0.8561) mengindikasikan bahwa kalimat yang ditemukan sangat relevan dan menjawab query pengguna dengan cukup baik.
+                        </li>
+                        <li>
+                            Perekonomian Indonesia relatif stabil dalam hal pertumbuhan domestik pada triwulan III-2024, 
+                            dengan tingkat pertumbuhan yang hampir tidak berubah dibandingkan tahun lalu.
+                            Pencarian ini memberikan gambaran bahwa perekonomian Indonesia menunjukkan pertumbuhan yang moderat dan berkelanjutan 
+                            meskipun ada fluktuasi kecil, yang mencerminkan stabilitas ekonomi dalam periode tersebut.
+                        </li>
+                    </ul>
+                </p>
+            </div>
+
+            <!-- Chatbot -->
+            <div class="paragraph">
+                <!-- Inisialisasi Model Sentence-Transformers -->
+                <h2>
+                    Chatbot dengan Groq
+                </h2>
+                <p class="justify-text">
+                    Untuk membuat chatbot sederhana ini diperlukan menginstal terlebih dahulu, dan juga perlu API dari Groq.
+                    Kemudian untuk datanya diambil dari nilai atau isi variabel <code>collection_name</code>.
+                </p>
+
+                <!-- Autentifikasi Pengguna-->
+                 <h3>
+                    1. Autentifikasi Pengguna
+                </h3>
+                <p class="justify-text">
+                    Pertama mengamankan dan mengautentikasi pengguna sebelum mereka dapat mengakses 
+                    layanan Groq API untuk kebutuhan analisis atau komputasi berbasis AI
+                    Autentifikasi dilakukan dengan memasukkan API key Groq secara aman.
+                    Kemudian membuat objek client untuk berkomunikasi dengan layanan Groq menggunakan kunci API yang telah dimasukkan.
+                </p>
+                <textarea id="code" name="code">
+# Import Library
+from groq import Groq
+import getpass
+
+# Meminta input API Key dengan getpass
+GROQ_API_KEY=getpass.getpass("Groq API Key: ")
+
+# Membuat objek client untuk berinteraksi dengan Groq
+client = Groq(api_key=GROQ_API_KEY)
+                </textarea>
+                <p class="justify-text">
+                    Kode ini digunakan untuk menghubungkan aplikasi dengan API Groq dengan cara yang aman. 
+                    Pertama, pustaka <code>groq</code> dan <code>getpass</code> diimpor, 
+                    yang mana <code>getpass</code> digunakan untuk meminta API key dari pengguna tanpa menampilkan input di layar. 
+                    Setelah itu, kode meminta pengguna untuk memasukkan API key mereka, yang disimpan dalam variabel <code>GROQ_API_KEY</code>. 
+                    Kemudian, objek <code>client</code> dibuat dengan menggunakan kelas <code>Groq</code>, 
+                    yang mengautentikasi dan memungkinkan aplikasi berinteraksi dengan API Groq menggunakan API key yang telah dimasukkan. 
+                    Dengan kode ini dapat mempersiapkan aplikasi untuk berkomunikasi dengan layanan Groq untuk keperluan analisis berbasis AI.
+                </p>
+
+                <!-- Membuat fungsi untuk mendapatkan respon dari model AI-->
+                 <h3>
+                    2. Buat fungsi untuk mendapatkan respon dari model AI
+                </h3>
+                <p class="justify-text">
+                    Buat fungsi dengan nama <code>get_response</code> yang bekerja dengan mengirimkan 
+                    sebuah query dan konteks ke API model AI <code>"llama-3.2-90b-vision-preview"</code> 
+                    untuk mendapatkan jawaban atau respons berdasarkan input yang diberikan. 
+                    Model menggunakan informasi dari dua jenis pesan (sistem dan pengguna) untuk memproses pertanyaan dan memberikan jawaban yang relevan.
+                </p>
+                <textarea id="code" name="code">
+# Buat fungsi yang menerima dua parameter query (pertanyaan pengguna) dan context (konteks atau informasi terkait)
+def get_response(query: str, context: str):
+  completion = client.chat.completions.create(
+      model="llama-3.2-90b-vision-preview",
+      messages=[
+          {
+              "role": "system",
+              "content": system_message
+          },
+          {
+              "role": "user",
+              "content": context
+          },
+          {
+              "role": "user",
+              "content": query
+          }
+      ],
+      temperature=0,
+      max_tokens=1024,
+      top_p=1,
+      stream=False,
+      stop=None,
+  )
+
+  return completion.choices[0].message.content
+                </textarea>
+                <p class="justify-text">
+                    Fungsi <code>get_response</code> menerima dua argumen: <code>query</code> yang berisi pertanyaan atau permintaan pengguna, 
+                    dan <code>context</code> yang memberikan informasi latar belakang yang relevan untuk membantu model menghasilkan jawaban yang lebih baik. 
+                    Di dalam fungsi, pertama-tama dilakukan panggilan ke <code>client.chat.completions.create</code>, 
+                    yang mengirimkan permintaan ke model <code>"llama-3.2-90b-vision-preview"</code> untuk menghasilkan respon berdasarkan percakapan yang diberikan.
+                    Setelah permintaan dikirimkan, fungsi ini mengembalikan konten dari respon yang pertama <code>(completion.choices[0].message.content)</code>, 
+                    yang berisi jawaban yang dihasilkan oleh model untuk query yang diberikan berdasarkan konteks yang ada.
+                    Respon yang diberikan dipengaruhi oleh parameter seperti <code>temperature</code>, <code>max_tokens</code>, dan lainnya, yang mengatur cara model menghasilkan teks.
+                </p>
+
+                <!-- Membuat fungsi untuk mendapatkan respon dari model AI-->
+                 <h3>
+                    3. Mengirimkan Pertanyaan dan Mendapatkan Respon
+                </h3>
+                <p class="justify-text">
+                    Berikut ini cara mengirimkan pertanyaan bersama dengan konteks ke model AI, 
+                    kemudian mengambil jawaban yang dihasilkan oleh model dan mencetaknya ke layar. 
+                    Fungsi <code>get_response</code> bertanggung jawab untuk mendapatkan jawaban berdasarkan konteks dan query yang diberikan. 
+                    Jawaban ini akan digunakan untuk memberikan informasi kepada pengguna.
+                </p>
+                <img src="img/output_llama.png"  alt="Output_LLAMA" style="max-width: 100%; height: 360px;">
+            </div>
+
+            <!-- Berinteraksi dengan Model AI melalui Chat dengan GUI berbasis web -->
+            <div class="paragraph">
+                <h3>
+                    4. Berinteraksi dengan Model AI melalui Chat dengan GUI berbasis web
+                </h3>
+                <p class="justify-text">
+                    Untuk membuat antarmuka grafis (GUI) berbasis web menggunakan gradio
+                    yang memungkinkan pengguna mengajukan pertanyaan (query) ke model AI dan mendapatkan jawaban secara langsung. 
+                    Fungsi <code>chat_interface</code> menangani input pengguna, memanggil model AI untuk mendapatkan respons, dan menampilkan hasilnya. 
+                    Antarmuka ini diluncurkan sebagai aplikasi web interaktif yang bisa dibagikan ke orang lain melalui URL.
+                </p>
+                <textarea id="code" name="code">
+# Import library gradio
+import gradio as gr
+
+# Fungsi untuk menangani input query yang diberikan oleh pengguna
+def chat_interface(query):
+    try:
+        response = get_response(query, context)
+        return response
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+# Membuat antarmuka (Gradio Interface)
+iface = gr.Interface(
+    fn=chat_interface,
+    inputs=[
+        gr.Textbox(label="Your Query")
+    ],
+    outputs=gr.Textbox(label="Assistant Response"),
+    title="LLM Chat Interface",
+    description="Chat with the LLM"
+)
+
+# Meluncurkan antarmuka web
+iface.launch(pwa=True, share=True)
+                </textarea>
+            </div>
+            <div style="background-color: #E3DEC6; padding: 4px; text-align: center;">
+                <h4> Chat melalui Interface</h4>
+                <img src="img/pertumbuhan_ekonomi_domestik.png"  alt="pertumbuhan_ekonomi_domestik" style="max-width: 100%; height: 500px;">
+                <br><br>
+                <img src="img/pertumbuhan_pdb.png"  alt="pertumbuhan_pdb" style="max-width: 100%; height: 500px;">
+                <br><br>
+                <img src="img/kondisi_ekonomi_global.png"  alt="kondisi_ekonomi_global" style="max-width: 100%; height: 500px;">
+                <br><br>
+                <img src="img/harga_komoditas_global.png"  alt="harga_komoditas_global" style="max-width: 100%; height: 500px;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+     <footer>
+        <p>&copy; 2024 Eva Nurkhofifah.</p>
+    </footer>
+    
+     <!-- Menyertakan skrip CodeMirror -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/codemirror.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/mode/python/python.js"></script>
+    
+    <script>
+        // Pilih semua <textarea> dengan ID "code"
+        var editors = document.querySelectorAll("#code");
+
+        // Menyusun editor CodeMirror
+        editors.forEach(function(textarea) {
+            var editor = CodeMirror.fromTextArea(textarea, {
+                mode: "python",           // Bahasa pemrograman Python
+                lineNumbers: false,        // Menampilkan nomor baris
+                theme: "eclipse",         // Tema editor
+                readOnly: true            // Membuat editor hanya baca
+            });
+        });
+        // var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+        //     mode: "python",           
+        //     lineNumbers: true,        
+        //     theme: "default",
+        //     readOnly: true          
+        // });
+    </script>
+    </body>
+</html>

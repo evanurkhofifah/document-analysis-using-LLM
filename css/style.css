@@ -1,0 +1,154 @@
+/* CSS Style Document Analysis & Chatbot AI - Laporan Surveillance Perbankan Indonesia Triwulan III Tahun 2024 */
+
+body {
+    font-family: Georgia, sans-serif;
+    background-color: #DACBA9;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 80%;
+    margin: auto;
+    overflow: hidden;
+}
+
+header {
+    background: #DACBA9;
+    color: #333;
+    padding-top: 30px;
+    min-height: 70px;
+    border-bottom: #DACBA9 3px solid;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+p {
+    text-align: justify;
+    font-size: 16px;
+}
+
+.paragraph {
+    background-color: #E3DEC6;
+    padding: 10px;
+    text-align: justify;
+    font-size: 14px;
+    font-style: normal;
+    font-family: Georgia, sans-serif;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.justify-text {
+    text-align: justify;
+    font-size: 14px;
+    font-style: normal;
+    font-family: Georgia, sans-serif;
+}
+
+.center-text {
+    text-align: center;
+    font-size: 14px;
+    font-style: normal;
+    font-family: Georgia, sans-serif;
+}
+
+.paragraph h2 {
+    text-align: center;
+}
+
+.paragraph ul {
+    padding-left: 20px;
+    margin: 10px 0;
+    list-style-type: disc;
+}
+
+.paragraph li {
+    margin-bottom: 5px;
+}
+
+.paragraph img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 70%;
+    height: auto;
+    margin-bottom: 10px;
+}
+
+code {
+    font-weight: bold;
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+}
+
+strong {
+    /* font-weight: bold; */
+    font-size: 14px;
+}
+
+.CodeMirror {
+    height: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.dropdown {
+    float: right;
+    margin-bottom: 6px;
+    background-color: #b8a372;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.content {
+    background: #DACBA9;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    font-size: 24px;
+    text-align: center;
+}
+
+h2 {
+    color: #333;
+    font-size: 18px;
+}
+
+h3 {
+    color: #4d2a08;
+    margin-top: 10px;
+    text-align: justify;
+}
+
+h4 {
+    color: #444;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.section-title {
+    font-weight: bold;
+}
+
+footer {
+    text-align: center;
+    /* margin-top: 0; */
+    padding: 10px;
+    border-top: 1px solid #DACBA9;
+    background-color: #DACBA9;
+}
+
+footer p {
+    margin: 0;
+    color: #666;
+    text-align: center;
+}
